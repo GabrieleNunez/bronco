@@ -48,13 +48,17 @@ class Application {
 				
 			} catch(Exception $exception) {
 
+				
 				$class_bits = get_class($exception);
 				$parts = explode('\\',$class_bits);
 				$class = end($parts);
 				
 				if(ErrorHandler::HasHook($class)){
 					ErrorHandler::ExecuteHook($class,$exception);
+				} elseif (self::$debug) {
+					\Library\Printout::write($exception);
 				}
+				
 			}
 		}
 	}

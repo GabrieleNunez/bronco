@@ -61,14 +61,21 @@ class Model {
 	}
 
 	// manually assign attributes
+	// NOTE: THIS WILL CLEAR all attributes currently assigned
 	public function assign($attributes) {
 		$this->attributes = $attributes;
 	}
 
 	// convert to an array
+	// DEPRECATED please move to to_array
 	public function toArray() {
 		$attributes = array_map(array('Library\Model','htmlClean'), $this->attributes);
 		return $attributes;
+	}
+
+	// this function for now only wrapps o 
+	public function to_array() {
+		return $this->toArray();
 	}
 
 	// save the model 
@@ -107,9 +114,10 @@ class Model {
 			$values = array();
 
 			foreach($this->attributes as $column => $value){
-				$assignmentType = isset($this->expected[$column]) ? $this->expected[$column] : "'%s'";
+				$insert_fmt = $value === null ? '%s' : "'%s'";
+				$assignmentType = isset($this->expected[$column]) ? $this->expected[$column] : $insert_fmt;
 				$columns[] = $column.' = '.$assignmentType;
-				$values[$column] = $this->sql->escape_string($value);
+				$values[$column] = $value === null ? 'NULL' : $this->sql->escape_string($value);
 			}
 
 			$insertSet = implode(',',$columns);
@@ -117,8 +125,9 @@ class Model {
 
 			$statement = 'INSERT INTO '.$this->table.' SET '.$insertSet;
 			$results = $this->sql->query($statement);
-			if($this->sql->errno)
+			if($this->sql->errno) {
 				throw new SQLException($statement."\n".$this->sql->error);
+			}
 
 			if($results){
 				

@@ -25,7 +25,7 @@ class Router {
 		self::$active_method = $_SERVER['REQUEST_METHOD'];
 		self::$active_request_uri = $_SERVER['REQUEST_URI'];
 
-		$path = self::$active_request_uri; // set our path to our request
+		$path = strtolower(self::$active_request_uri); // set our path to our request
 		$path = explode('?',$path)[0]; // check for a query string. At zero index
 		$path = strlen($path) > 1 ? rtrim($path,'/') : $path; //strip the slash at the end of the string (if its there). rtrim will take care of this automatically
 		$parts = explode('/',$path);
@@ -52,7 +52,7 @@ class Router {
 		while(($part = current($parts)) !== false) {
 			$identifier = '';
 			$is_wildcard = substr($part, 0, 1) == '@';
-			$identifier = $is_wildcard ? '@' : $part;
+			$identifier = $is_wildcard ? '@' : strtolower($part); // conver part to lowercase additionally just in case
 
 			if(!isset($level[$identifier])) // define the level
 				$level[$identifier] = array();

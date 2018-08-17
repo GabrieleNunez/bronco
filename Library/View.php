@@ -2,8 +2,18 @@
 
 // Shortcut to whatever engine
 class View  {
+	private static $engine = 'bronco';
 
-	public static function make($viewname, $engine = 'bronco') {
+	// set the engine to the specific
+	public static function engine($engine = 'bronco') {
+		self::$engine = $engine;
+	}
+
+	public static function make($viewname, $engine = false) {
+
+		// determine if we need to provide our own engine type or use the specified one
+		$engine = $engine === false ? self::$engine : $engine;
+
 		switch(strtolower($engine)){
 			case 'php':
 				return \Library\ViewEngines\PhpViewEngine::make($viewname);

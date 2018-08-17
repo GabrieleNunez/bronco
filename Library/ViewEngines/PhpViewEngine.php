@@ -1,5 +1,6 @@
 <?php namespace Library\ViewEngines;
 
+use Library\View;
 use Library\Application;
 use Library\ViewEngines\ViewEngine;
 
@@ -41,6 +42,11 @@ class PhpViewEngine extends ViewEngine {
 			$this->variables = array_merge($this->variables,$key);
 		else // Not array lets set the key value pair outselves
 			$this->variables[$key] = $value; 
+		return $this;
+	}
+
+	public function link($templates = array()) {
+		// TODO implement link
 		return $this;
 	}
 

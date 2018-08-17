@@ -4,15 +4,15 @@ use Library\View;
 use Library\Request;
 
 //A base Controller class. Light and sweet
-class Controller{
+class Controller {
 
 	protected $errors = array(); // anything that can be reported as an error
 	protected $json = array('success' => true, 'response' => array());
-	protected $templates = array(//'header ' => 'templates/header', 
-								 'content' => false);
-								 //'footer' => 'templates/footer');
+	protected $templates = array('header ' => '/templates/header.php', 
+								 'content' => false,
+								 'footer' => '/templates/footer.php');
                                  
-	protected $linked_templates = array('/frontend/header.php', '/frontend/footer.php', '/frontend/nav.php', '/frontend/social.php');
+	protected $linked_templates = array();
                                     
 	protected $variables = array('title' => 'Page Title Here', 
 								 'maintab' => 'some',
@@ -20,7 +20,7 @@ class Controller{
 								 'hqImages' => array(),
 								 'copyright' => 'Copyright &copy;'); // template variables
 	
-	private $responseErrors = array(
+	private $response_errors = array(
 		'400' => 'HTTP/1.0 400 Bad Request',
 		'401' => 'HTTP/1.0 401 Unauthorized',
 		'403' => 'HTTP/1.0 403 Forbidden',
@@ -31,43 +31,50 @@ class Controller{
 	public function redirect($url, $delay = 0) {
 		if($delay > 0) {
 			header('refresh:'.$delay.'; url='.$url);
-		}
-		else {
+		} else {
 			header('Location: '.$url);
 			exit;
 		}
 	}
 	
-	protected function badRequest() { // Use this when you can't make sense of a request - like asking to see a user profile but not sending a user id
-		header($this->responseErrors['400'], true, 400);
-		$this->renderError('400');
+	protected function bad_request($force_json = false) { // Use this when you can't make sense of a request - like asking to see a user profile but not sending a user id
+		header($this->response_errors['400'], true, 400);
+		$this->renderError('400', $force_json);
 	}
 
-	protected function unauthorized() { // Use this when the user is a guest or their login token is expired
-		header($this->responseErrors['401'], true, 401);
-		$this->renderError('401');
+	protected function unauthorized($force_json = false) { // Use this when the user is a guest or their login token is expired
+		header($this->response_errors['401'], true, 401);
+		$this->renderError('401', $force_json);
 	}
 
-	protected function forbidden() { // Use this when the user is authenticated properly but they're not allowed to view this particular resource or data object
-		header($this->responseErrors['403'], true, 403);
-		$this->renderError('403');
+	protected function forbidden($force_json = false) { // Use this when the user is authenticated properly but they're not allowed to view this particular resource or data object
+		header($this->response_errors['403'], true, 403);
+		$this->renderError('403', $force_json);
 	}
 
-	protected function notFound() { // Use this when we can't find the requested resource or when we want the user to think it doesn't exist
-		header($this->responseErrors['404'], true, 404);
-		$this->renderError('404');
+	protected function not_found($force_json = false) { // Use this when we can't find the requested resource or when we want the user to think it doesn't exist
+		header($this->response_errors['404'], true, 404);
+		$this->renderError('404', $force_json);
 	}
 
-	protected function internalError() { // Use this when the application itself throws an error that we can't recover from and we just need to bail
-		header($this->responseErrors['500'], true, 500);
-		$this->renderError('500');
+	protected function internal_error($force_json = false) { // Use this when the application itself throws an error that we can't recover from and we just need to bail
+		header($this->response_errors['500'], true, 500);
+		$this->renderError('500', $force_json);
 	}
 	
-	public function contentView($path){
+	public function content_view($path){
 		$this->templates['content'] = $path;
 	}
 
-	public function clearVariables() {
+	public function header_view($path) {
+		$this->templates['header'] = $path;
+	}
+
+	public function footer_view($path) {
+		$this->templates['footer'] = $path;
+	}
+
+	public function clear_variables() {
 		$this->variables = array();
 	}
 	
@@ -92,20 +99,24 @@ class Controller{
 			$this->errors[$name] = $value;
 	}
 
+	public function has_errors() {
+		return $this->errors ? true : false;
+	}
+
 	// render our view as a template and pass in our defined variables
-	public function renderTemplate(){
+	public function render_template(){
 		
 		$this->variables['errors'] = $this->errors;
 		$this->variables['copyright'] =  'Copyright &copy; '.date('Y');
 		foreach($this->templates as $type => $template){
 			if($template !== false)
                 $links = array_merge($this->linked_templates);
-				echo View::make($template)->with($this->variables)->link($links);
+			echo View::make($template)->with($this->variables)->link($links);
 		}
 	}
 
 	// render our view as raw json using our variables and errors as data
-	public function renderJson(){
+	public function render_json(){
 		header('Content-type: application/json');
 		header('Cache-Control: no-cache, must-revalidate');
 
@@ -117,12 +128,12 @@ class Controller{
 	}
 	
 	// render some kind of header error
-	public function renderError($error) { 
+	public function render_error($error, $force_json = false) { 
 		
-		$status = str_replace('HTTP/1.0','', $this->responseErrors[$error]);
+		$status = str_replace('HTTP/1.0','', $this->response_errors[$error]);
 		$this->variables = array('status' => $error, 'message' => $status);
 		$this->errors = array();
-		if(Request::isAjax()) {
+		if(Request::isAjax() || $force_json) {
 			$this->renderJson();
 		} else {
 			$this->variables = array('status' => $error, 'message' => $status);
